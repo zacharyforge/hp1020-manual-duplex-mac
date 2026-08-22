@@ -18,7 +18,15 @@ static NSError *HPError(NSString *message) {
 @property(nonatomic, strong) NSTextField *bindingLabel;
 @property(nonatomic, strong) NSPopUpButton *bindingPopup;
 @property(nonatomic, strong) NSTextField *bindingHintLabel;
+@property(nonatomic, strong) NSTextField *rangeLabel;
+@property(nonatomic, strong) NSPopUpButton *rangePopup;
+@property(nonatomic, strong) NSTextField *rangeFromLabel;
+@property(nonatomic, strong) NSTextField *rangeFromField;
+@property(nonatomic, strong) NSTextField *rangeToLabel;
+@property(nonatomic, strong) NSTextField *rangeToField;
+@property(nonatomic, strong) NSTextField *selectedFileLabel;
 @property(nonatomic, strong) NSButton *chooseButton;
+@property(nonatomic, strong) NSButton *printButton;
 @property(nonatomic, strong) NSButton *testButton;
 @property(nonatomic, strong) NSTextField *noteLabel;
 @property(nonatomic, strong) NSTextField *refillTitleLabel;
@@ -33,6 +41,7 @@ static NSError *HPError(NSString *message) {
 @property(nonatomic, copy) NSString *pendingSecondTitle;
 @property(nonatomic, copy) NSString *printerQueue;
 @property(nonatomic, copy) NSString *language;
+@property(nonatomic, strong) NSURL *selectedPDFURL;
 @property(nonatomic, assign) BOOL busy;
 @end
 
@@ -47,13 +56,26 @@ static NSError *HPError(NSString *message) {
                 @"windowTitle": @"HP1020 手动双面打印",
                 @"title": @"HP LaserJet 1020 手动双面打印",
                 @"subtitle": @"程序会先打印第一面，然后暂停并提醒你重新放纸一次。只有确认纸张已放回后，才会打印第二面。",
-                @"language": @"语言：",
+                @"language": @"语言 / Language",
                 @"binding": @"装订方向：",
                 @"longEdge": @"长边装订（像书一样左右翻）",
                 @"shortEdge": @"短边装订（像台历一样上下翻）",
                 @"longHint": @"长边模式：左右翻页后，两面文字方向一致。",
                 @"shortHint": @"短边模式：上下翻页后两面正立；直接比较纸张两面时相差 180° 是正常的。",
-                @"choosePDF": @"选择 PDF 双面打印",
+                @"range": @"打印范围：",
+                @"allPages": @"全部页",
+                @"pageRange": @"指定页码",
+                @"fromPage": @"从",
+                @"toPage": @"到",
+                @"lastPagePlaceholder": @"末页",
+                @"rangeInvalid": @"页码范围只能填写正整数。留空表示第一页或最后一页。",
+                @"rangeOrderInvalid": @"起始页不能大于结束页。",
+                @"rangeOutsideFormat": @"指定范围超出文档页数（文档共 %ld 页）。",
+                @"choosePDF": @"选择 PDF",
+                @"startPrinting": @"开始打印",
+                @"noPDFSelected": @"尚未选择 PDF。选择后请设置页码范围，再点击“开始打印”。",
+                @"selectedPDFFormat": @"已选择：%@。设置页码范围后，点击“开始打印”。",
+                @"selectedPDFMissing": @"选择的 PDF 已不存在，请重新选择。",
                 @"runTest": @"运行内置方向测试",
                 @"reloadNote": @"翻纸：整叠取出且不要调整页序；已打印面朝下；纸张底边先放入进纸盒。",
                 @"refillTitle": @"第一面已完成：请重新放纸一次。未确认前，第二面作业不会创建。",
@@ -75,9 +97,6 @@ static NSError *HPError(NSString *message) {
                 @"printingSecond": @"正在打印第二面（偶数页）…",
                 @"secondFailed": @"第二面打印未完成。",
                 @"duplexDone": @"双面打印完成。",
-                @"duplexDoneTitle": @"双面打印完成",
-                @"duplexDoneInfo": @"两面均已发送并完成打印。",
-                @"ok": @"好",
                 @"canceled": @"已取消第二面打印。",
                 @"preparingFormat": @"正在准备 %@…",
                 @"printingFront": @"正在打印第一面（奇数页）…",
@@ -85,21 +104,32 @@ static NSError *HPError(NSString *message) {
                 @"secondSideTitle": @" - 第二面",
                 @"printFailed": @"打印未完成。",
                 @"singleDone": @"单页打印完成。",
-                @"singleDoneTitle": @"打印完成",
-                @"singleDoneInfo": @"文档只有一页，已经打印完成。",
                 @"errorTitle": @"无法完成双面打印"
             },
             @"en": @{
                 @"windowTitle": @"HP1020 Manual Duplex",
                 @"title": @"HP LaserJet 1020 Manual Duplex",
                 @"subtitle": @"The app prints the first side, pauses, and asks you to reload the paper once. The second side is not submitted until you confirm the reload.",
-                @"language": @"Language:",
+                @"language": @"语言 / Language",
                 @"binding": @"Binding:",
                 @"longEdge": @"Long edge (flip like a book)",
                 @"shortEdge": @"Short edge (flip like a calendar)",
                 @"longHint": @"Long edge: both sides are upright after flipping left to right.",
                 @"shortHint": @"Short edge: both sides are upright after flipping top to bottom; a 180° difference when directly comparing the two faces is normal.",
-                @"choosePDF": @"Choose PDF and Print",
+                @"range": @"Print range:",
+                @"allPages": @"All pages",
+                @"pageRange": @"Page range",
+                @"fromPage": @"From",
+                @"toPage": @"To",
+                @"lastPagePlaceholder": @"Last",
+                @"rangeInvalid": @"Page ranges must contain positive whole numbers. Leave a field blank for the first or last page.",
+                @"rangeOrderInvalid": @"The first page cannot be greater than the last page.",
+                @"rangeOutsideFormat": @"The selected range is outside this document (%ld pages total).",
+                @"choosePDF": @"Choose PDF",
+                @"startPrinting": @"Start Printing",
+                @"noPDFSelected": @"No PDF selected. Choose one, set the page range, then click Start Printing.",
+                @"selectedPDFFormat": @"Selected: %@. Set the page range, then click Start Printing.",
+                @"selectedPDFMissing": @"The selected PDF no longer exists. Choose it again.",
                 @"runTest": @"Run Orientation Test",
                 @"reloadNote": @"Reload: keep the stack order; printed side down; feed the bottom edge into the tray first.",
                 @"refillTitle": @"The first side is complete. Reload the paper once. No second-side job is created until you confirm.",
@@ -121,9 +151,6 @@ static NSError *HPError(NSString *message) {
                 @"printingSecond": @"Printing the second side (even pages)…",
                 @"secondFailed": @"Second-side printing did not complete.",
                 @"duplexDone": @"Manual duplex printing complete.",
-                @"duplexDoneTitle": @"Manual Duplex Complete",
-                @"duplexDoneInfo": @"Both sides were submitted and completed.",
-                @"ok": @"OK",
                 @"canceled": @"Second-side printing canceled.",
                 @"preparingFormat": @"Preparing %@…",
                 @"printingFront": @"Printing the first side (odd pages)…",
@@ -131,8 +158,6 @@ static NSError *HPError(NSString *message) {
                 @"secondSideTitle": @" - Second Side",
                 @"printFailed": @"Printing did not complete.",
                 @"singleDone": @"Single-page printing complete.",
-                @"singleDoneTitle": @"Printing Complete",
-                @"singleDoneInfo": @"The document contains one page and has finished printing.",
                 @"errorTitle": @"Unable to Complete Manual Duplex Printing"
             }
         };
@@ -171,8 +196,8 @@ static NSError *HPError(NSString *message) {
 - (void)application:(NSApplication *)sender openFiles:(NSArray<NSString *> *)filenames {
     NSString *path = filenames.firstObject;
     if (path.length > 0 && [path.pathExtension.lowercaseString isEqualToString:@"pdf"]) {
-        [self startPrintingURL:[NSURL fileURLWithPath:path]];
-        [sender replyToOpenOrPrint:NSApplicationDelegateReplySuccess];
+        BOOL selected = [self selectPDFURL:[NSURL fileURLWithPath:path]];
+        [sender replyToOpenOrPrint:selected ? NSApplicationDelegateReplySuccess : NSApplicationDelegateReplyFailure];
     } else {
         [sender replyToOpenOrPrint:NSApplicationDelegateReplyFailure];
     }
@@ -186,7 +211,7 @@ static NSError *HPError(NSString *message) {
 }
 
 - (void)buildWindow {
-    self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 680, 470)
+    self.window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 680, 600)
                                               styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable
                                                 backing:NSBackingStoreBuffered
                                                   defer:NO];
@@ -210,6 +235,7 @@ static NSError *HPError(NSString *message) {
     languageRow.orientation = NSUserInterfaceLayoutOrientationHorizontal;
     languageRow.spacing = 8;
     languageRow.alignment = NSLayoutAttributeCenterY;
+    languageRow.translatesAutoresizingMaskIntoConstraints = NO;
 
     self.bindingLabel = [NSTextField labelWithString:@""];
     self.bindingPopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
@@ -220,27 +246,51 @@ static NSError *HPError(NSString *message) {
     bindingRow.spacing = 8;
     bindingRow.alignment = NSLayoutAttributeCenterY;
 
-    NSStackView *settingsRow = [NSStackView stackViewWithViews:@[languageRow, bindingRow]];
-    settingsRow.orientation = NSUserInterfaceLayoutOrientationHorizontal;
-    settingsRow.spacing = 24;
-    settingsRow.alignment = NSLayoutAttributeCenterY;
-
     self.bindingHintLabel = [NSTextField wrappingLabelWithString:@""];
     self.bindingHintLabel.font = [NSFont systemFontOfSize:12.5 weight:NSFontWeightMedium];
     self.bindingHintLabel.textColor = NSColor.systemBlueColor;
     self.bindingHintLabel.alignment = NSTextAlignmentCenter;
     self.bindingHintLabel.maximumNumberOfLines = 2;
 
+    self.rangeLabel = [NSTextField labelWithString:@""];
+    self.rangePopup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
+    self.rangePopup.target = self;
+    self.rangePopup.action = @selector(rangeChanged:);
+    self.rangeFromLabel = [NSTextField labelWithString:@""];
+    self.rangeFromField = [[NSTextField alloc] initWithFrame:NSZeroRect];
+    self.rangeFromField.alignment = NSTextAlignmentCenter;
+    self.rangeFromField.placeholderString = @"1";
+    self.rangeToLabel = [NSTextField labelWithString:@""];
+    self.rangeToField = [[NSTextField alloc] initWithFrame:NSZeroRect];
+    self.rangeToField.alignment = NSTextAlignmentCenter;
+    NSStackView *rangeRow = [NSStackView stackViewWithViews:@[
+        self.rangeLabel, self.rangePopup, self.rangeFromLabel,
+        self.rangeFromField, self.rangeToLabel, self.rangeToField
+    ]];
+    rangeRow.orientation = NSUserInterfaceLayoutOrientationHorizontal;
+    rangeRow.spacing = 8;
+    rangeRow.alignment = NSLayoutAttributeCenterY;
+
+    self.selectedFileLabel = [NSTextField wrappingLabelWithString:@""];
+    self.selectedFileLabel.font = [NSFont systemFontOfSize:12.5 weight:NSFontWeightMedium];
+    self.selectedFileLabel.textColor = NSColor.secondaryLabelColor;
+    self.selectedFileLabel.alignment = NSTextAlignmentCenter;
+    self.selectedFileLabel.maximumNumberOfLines = 2;
+
     self.chooseButton = [NSButton buttonWithTitle:@"" target:self action:@selector(choosePDF:)];
     self.chooseButton.bezelStyle = NSBezelStyleRounded;
     self.chooseButton.controlSize = NSControlSizeLarge;
-    self.chooseButton.keyEquivalent = @"\r";
+
+    self.printButton = [NSButton buttonWithTitle:@"" target:self action:@selector(startSelectedPDF:)];
+    self.printButton.bezelStyle = NSBezelStyleRounded;
+    self.printButton.controlSize = NSControlSizeLarge;
+    self.printButton.enabled = NO;
 
     self.testButton = [NSButton buttonWithTitle:@"" target:self action:@selector(runBuiltInTest:)];
     self.testButton.bezelStyle = NSBezelStyleRounded;
     self.testButton.controlSize = NSControlSizeLarge;
 
-    NSStackView *buttonRow = [NSStackView stackViewWithViews:@[self.chooseButton, self.testButton]];
+    NSStackView *buttonRow = [NSStackView stackViewWithViews:@[self.chooseButton, self.printButton, self.testButton]];
     buttonRow.orientation = NSUserInterfaceLayoutOrientationHorizontal;
     buttonRow.spacing = 12;
 
@@ -283,23 +333,31 @@ static NSError *HPError(NSString *message) {
     statusRow.spacing = 8;
     statusRow.alignment = NSLayoutAttributeCenterY;
 
-    NSStackView *stack = [NSStackView stackViewWithViews:@[self.titleLabel, self.subtitleLabel, settingsRow, self.bindingHintLabel, buttonRow, self.noteLabel, self.refillStack, statusRow]];
+    NSStackView *stack = [NSStackView stackViewWithViews:@[self.titleLabel, self.subtitleLabel, bindingRow, self.bindingHintLabel, rangeRow, self.selectedFileLabel, buttonRow, self.noteLabel, self.refillStack, statusRow]];
     stack.orientation = NSUserInterfaceLayoutOrientationVertical;
     stack.alignment = NSLayoutAttributeCenterX;
     stack.spacing = 18;
     stack.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.window.contentView addSubview:languageRow];
     [self.window.contentView addSubview:stack];
 
     [NSLayoutConstraint activateConstraints:@[
+        [languageRow.topAnchor constraintEqualToAnchor:self.window.contentView.topAnchor constant:16],
+        [languageRow.trailingAnchor constraintEqualToAnchor:self.window.contentView.trailingAnchor constant:-20],
         [stack.centerXAnchor constraintEqualToAnchor:self.window.contentView.centerXAnchor],
         [stack.centerYAnchor constraintEqualToAnchor:self.window.contentView.centerYAnchor],
         [self.subtitleLabel.widthAnchor constraintEqualToConstant:600],
         [self.bindingHintLabel.widthAnchor constraintEqualToConstant:610],
+        [self.selectedFileLabel.widthAnchor constraintEqualToConstant:610],
         [self.noteLabel.widthAnchor constraintEqualToConstant:610],
         [self.refillTitleLabel.widthAnchor constraintEqualToConstant:610],
-        [self.chooseButton.widthAnchor constraintEqualToConstant:250],
-        [self.testButton.widthAnchor constraintEqualToConstant:230],
+        [self.rangeFromField.widthAnchor constraintEqualToConstant:62],
+        [self.rangeToField.widthAnchor constraintEqualToConstant:62],
+        [self.chooseButton.widthAnchor constraintEqualToConstant:155],
+        [self.printButton.widthAnchor constraintEqualToConstant:155],
+        [self.testButton.widthAnchor constraintEqualToConstant:205],
         [self.chooseButton.heightAnchor constraintEqualToConstant:40],
+        [self.printButton.heightAnchor constraintEqualToConstant:40],
         [self.testButton.heightAnchor constraintEqualToConstant:40]
     ]];
     [self updateLocalizedStrings];
@@ -315,12 +373,27 @@ static NSError *HPError(NSString *message) {
     [self updateBindingHint];
 }
 
+- (void)rangeChanged:(id)sender {
+    BOOL enabled = !self.busy && self.rangePopup.indexOfSelectedItem == 1;
+    self.rangeFromLabel.enabled = enabled;
+    self.rangeFromField.enabled = enabled;
+    self.rangeToLabel.enabled = enabled;
+    self.rangeToField.enabled = enabled;
+}
+
 - (void)updateBindingHint {
     self.bindingHintLabel.stringValue = [self L:(self.bindingPopup.indexOfSelectedItem == 1 ? @"shortHint" : @"longHint")];
 }
 
+- (void)updateSelectedFileLabel {
+    self.selectedFileLabel.stringValue = self.selectedPDFURL
+        ? [NSString stringWithFormat:[self L:@"selectedPDFFormat"], self.selectedPDFURL.lastPathComponent]
+        : [self L:@"noPDFSelected"];
+}
+
 - (void)updateLocalizedStrings {
     NSInteger bindingIndex = self.bindingPopup.indexOfSelectedItem;
+    NSInteger rangeIndex = self.rangePopup.indexOfSelectedItem;
     self.window.title = [self L:@"windowTitle"];
     self.titleLabel.stringValue = [self L:@"title"];
     self.subtitleLabel.stringValue = [self L:@"subtitle"];
@@ -330,8 +403,19 @@ static NSError *HPError(NSString *message) {
     [self.bindingPopup addItemsWithTitles:@[[self L:@"longEdge"], [self L:@"shortEdge"]]];
     [self.bindingPopup selectItemAtIndex:MAX(0, bindingIndex)];
     [self updateBindingHint];
+    self.rangeLabel.stringValue = [self L:@"range"];
+    [self.rangePopup removeAllItems];
+    [self.rangePopup addItemsWithTitles:@[[self L:@"allPages"], [self L:@"pageRange"]]];
+    [self.rangePopup selectItemAtIndex:MAX(0, rangeIndex)];
+    self.rangeFromLabel.stringValue = [self L:@"fromPage"];
+    self.rangeToLabel.stringValue = [self L:@"toPage"];
+    self.rangeFromField.placeholderString = @"1";
+    self.rangeToField.placeholderString = [self L:@"lastPagePlaceholder"];
+    [self rangeChanged:nil];
     self.chooseButton.title = [self L:@"choosePDF"];
+    self.printButton.title = [self L:@"startPrinting"];
     self.testButton.title = [self L:@"runTest"];
+    [self updateSelectedFileLabel];
     self.noteLabel.stringValue = [self L:@"reloadNote"];
     self.refillTitleLabel.stringValue = [self L:@"refillTitle"];
     self.refillCheckbox.title = [self L:@"refillCheck"];
@@ -343,9 +427,12 @@ static NSError *HPError(NSString *message) {
 - (void)setBusy:(BOOL)busy status:(NSString *)status {
     self.busy = busy;
     self.chooseButton.enabled = !busy;
+    self.printButton.enabled = !busy && self.selectedPDFURL != nil;
     self.testButton.enabled = !busy;
     self.bindingPopup.enabled = !busy;
     self.languagePopup.enabled = !busy;
+    self.rangePopup.enabled = !busy;
+    [self rangeChanged:nil];
     self.statusLabel.stringValue = status;
     busy ? [self.spinner startAnimation:nil] : [self.spinner stopAnimation:nil];
 }
@@ -358,8 +445,30 @@ static NSError *HPError(NSString *message) {
     panel.allowsMultipleSelection = NO;
     panel.canChooseDirectories = NO;
     [panel beginSheetModalForWindow:self.window completionHandler:^(NSModalResponse result) {
-        if (result == NSModalResponseOK && panel.URL) [self startPrintingURL:panel.URL];
+        if (result == NSModalResponseOK && panel.URL) [self selectPDFURL:panel.URL];
     }];
+}
+
+- (BOOL)selectPDFURL:(NSURL *)url {
+    if (self.busy || !url || ![url.pathExtension.lowercaseString isEqualToString:@"pdf"]) return NO;
+    self.selectedPDFURL = url;
+    [self updateSelectedFileLabel];
+    self.printButton.enabled = YES;
+    [self.window makeKeyAndOrderFront:nil];
+    [NSApp activateIgnoringOtherApps:YES];
+    return YES;
+}
+
+- (void)startSelectedPDF:(id)sender {
+    if (self.busy || !self.selectedPDFURL) return;
+    if (![NSFileManager.defaultManager fileExistsAtPath:self.selectedPDFURL.path]) {
+        self.selectedPDFURL = nil;
+        [self updateSelectedFileLabel];
+        self.printButton.enabled = NO;
+        [self showError:HPError([self L:@"selectedPDFMissing"])];
+        return;
+    }
+    [self startPrintingURL:self.selectedPDFURL applySelectedRange:YES];
 }
 
 - (void)runBuiltInTest:(id)sender {
@@ -369,7 +478,17 @@ static NSError *HPError(NSString *message) {
         [self showError:HPError([self L:@"testMissing"])];
         return;
     }
-    [self startPrintingURL:[NSURL fileURLWithPath:path]];
+    [self startPrintingURL:[NSURL fileURLWithPath:path] applySelectedRange:NO];
+}
+
+- (BOOL)parsePositivePage:(NSString *)text value:(NSInteger *)value {
+    NSString *trimmed = [text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    if (trimmed.length == 0) return NO;
+    NSScanner *scanner = [NSScanner scannerWithString:trimmed];
+    NSInteger number = 0;
+    if (![scanner scanInteger:&number] || !scanner.isAtEnd || number < 1) return NO;
+    if (value) *value = number;
+    return YES;
 }
 
 - (NSDictionary *)runTask:(NSString *)launchPath arguments:(NSArray<NSString *> *)arguments {
@@ -461,6 +580,8 @@ static NSError *HPError(NSString *message) {
 - (BOOL)prepareDocuments:(NSURL *)sourceURL
                 workDir:(NSString *)workDir
               shortEdge:(BOOL)shortEdge
+              rangeStart:(NSInteger)rangeStart
+                rangeEnd:(NSInteger)rangeEnd
                pageCount:(NSInteger *)pageCount
                   front:(NSString **)frontPath
                    back:(NSString **)backPath
@@ -473,23 +594,50 @@ static NSError *HPError(NSString *message) {
         return NO;
     }
 
+    NSInteger selectedStart = rangeStart > 0 ? rangeStart : 1;
+    NSInteger selectedEnd = rangeEnd > 0 ? rangeEnd : count;
+    if (selectedStart > selectedEnd) {
+        if (error) *error = HPError([self L:@"rangeOrderInvalid"]);
+        return NO;
+    }
+    if (selectedStart > count || selectedEnd > count) {
+        if (error) *error = HPError([NSString stringWithFormat:[self L:@"rangeOutsideFormat"], (long)count]);
+        return NO;
+    }
+
+    NSString *selectedSource = sourceURL.path;
+    NSInteger selectedCount = selectedEnd - selectedStart + 1;
+    if (selectedStart != 1 || selectedEnd != count) {
+        selectedSource = [workDir stringByAppendingPathComponent:@"selected.pdf"];
+        NSString *selectedRange = selectedStart == selectedEnd
+            ? [NSString stringWithFormat:@"%ld", (long)selectedStart]
+            : [NSString stringWithFormat:@"%ld-%ld", (long)selectedStart, (long)selectedEnd];
+        NSDictionary *selectedResult = [self runTask:qpdf arguments:@[
+            @"--empty", @"--pages", sourceURL.path, selectedRange, @"--", selectedSource
+        ]];
+        if ([selectedResult[@"status"] intValue] != 0) {
+            if (error) *error = HPError(selectedResult[@"output"]);
+            return NO;
+        }
+    }
+
     NSMutableArray<NSString *> *frontPageNumbers = [NSMutableArray array];
-    for (NSInteger page = 1; page <= count; page += 2) {
+    for (NSInteger page = 1; page <= selectedCount; page += 2) {
         [frontPageNumbers addObject:[NSString stringWithFormat:@"%ld", (long)page]];
     }
     NSString *frontRange = [frontPageNumbers componentsJoinedByString:@","];
     NSString *front = [workDir stringByAppendingPathComponent:@"front.pdf"];
-    NSDictionary *frontResult = [self runTask:qpdf arguments:@[@"--empty", @"--pages", sourceURL.path, frontRange, @"--", front]];
+    NSDictionary *frontResult = [self runTask:qpdf arguments:@[@"--empty", @"--pages", selectedSource, frontRange, @"--", front]];
     if ([frontResult[@"status"] intValue] != 0) {
         if (error) *error = HPError(frontResult[@"output"]);
         return NO;
     }
 
     NSString *back = nil;
-    if (count > 1) {
+    if (selectedCount > 1) {
         NSString *rawBack = [workDir stringByAppendingPathComponent:@"back-raw.pdf"];
         NSMutableArray<NSString *> *args = [NSMutableArray arrayWithArray:@[@"--empty", @"--pages"]];
-        if (count % 2 == 1) {
+        if (selectedCount % 2 == 1) {
             NSString *blank = [NSBundle.mainBundle pathForResource:@"blank-a4" ofType:@"pdf"];
             if (!blank) {
                 if (error) *error = HPError([self L:@"blankMissing"]);
@@ -498,12 +646,12 @@ static NSError *HPError(NSString *message) {
             [args addObjectsFromArray:@[blank, @"1"]];
         }
         NSMutableArray<NSString *> *backPageNumbers = [NSMutableArray array];
-        NSInteger lastEvenPage = count % 2 == 0 ? count : count - 1;
+        NSInteger lastEvenPage = selectedCount % 2 == 0 ? selectedCount : selectedCount - 1;
         for (NSInteger page = lastEvenPage; page >= 2; page -= 2) {
             [backPageNumbers addObject:[NSString stringWithFormat:@"%ld", (long)page]];
         }
         NSString *backRange = [backPageNumbers componentsJoinedByString:@","];
-        [args addObjectsFromArray:@[sourceURL.path, backRange, @"--", rawBack]];
+        [args addObjectsFromArray:@[selectedSource, backRange, @"--", rawBack]];
         NSDictionary *backResult = [self runTask:qpdf arguments:args];
         if ([backResult[@"status"] intValue] != 0) {
             if (error) *error = HPError(backResult[@"output"]);
@@ -528,7 +676,7 @@ static NSError *HPError(NSString *message) {
         }
     }
 
-    if (pageCount) *pageCount = count;
+    if (pageCount) *pageCount = selectedCount;
     if (frontPath) *frontPath = front;
     if (backPath) *backPath = back;
     return YES;
@@ -590,11 +738,6 @@ static NSError *HPError(NSString *message) {
                 [self showError:error];
             } else {
                 [self setBusy:NO status:[self L:@"duplexDone"]];
-                NSAlert *done = [[NSAlert alloc] init];
-                done.messageText = [self L:@"duplexDoneTitle"];
-                done.informativeText = [self L:@"duplexDoneInfo"];
-                [done addButtonWithTitle:[self L:@"ok"]];
-                [done beginSheetModalForWindow:self.window completionHandler:nil];
             }
         });
     });
@@ -606,9 +749,29 @@ static NSError *HPError(NSString *message) {
     [self setBusy:NO status:[self L:@"canceled"]];
 }
 
-- (void)startPrintingURL:(NSURL *)url {
+- (void)startPrintingURL:(NSURL *)url applySelectedRange:(BOOL)applySelectedRange {
     if (self.busy || !url) return;
     BOOL shortEdge = self.bindingPopup.indexOfSelectedItem == 1;
+    NSInteger rangeStart = 0;
+    NSInteger rangeEnd = 0;
+    if (applySelectedRange && self.rangePopup.indexOfSelectedItem == 1) {
+        NSString *startText = self.rangeFromField.stringValue;
+        NSString *endText = self.rangeToField.stringValue;
+        if ([startText stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length > 0 &&
+            ![self parsePositivePage:startText value:&rangeStart]) {
+            [self showError:HPError([self L:@"rangeInvalid"])];
+            return;
+        }
+        if ([endText stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet].length > 0 &&
+            ![self parsePositivePage:endText value:&rangeEnd]) {
+            [self showError:HPError([self L:@"rangeInvalid"])];
+            return;
+        }
+        if (rangeStart > 0 && rangeEnd > 0 && rangeStart > rangeEnd) {
+            [self showError:HPError([self L:@"rangeOrderInvalid"])];
+            return;
+        }
+    }
     [self setBusy:YES status:[NSString stringWithFormat:[self L:@"preparingFormat"], url.lastPathComponent]];
 
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
@@ -621,7 +784,7 @@ static NSError *HPError(NSString *message) {
             NSString *front = nil;
             NSString *back = nil;
             if (!error && [self verifyPrinter:&error] &&
-                [self prepareDocuments:url workDir:workDir shortEdge:shortEdge pageCount:&pageCount front:&front back:&back error:&error]) {
+                [self prepareDocuments:url workDir:workDir shortEdge:shortEdge rangeStart:rangeStart rangeEnd:rangeEnd pageCount:&pageCount front:&front back:&back error:&error]) {
                 dispatch_async(dispatch_get_main_queue(), ^{ self.statusLabel.stringValue = [self L:@"printingFront"]; });
                 NSString *baseName = url.URLByDeletingPathExtension.lastPathComponent;
                 if ([self submitPDF:front title:[baseName stringByAppendingString:[self L:@"firstSideTitle"]] error:&error]) {
@@ -644,11 +807,6 @@ static NSError *HPError(NSString *message) {
                     [self showError:error];
                 } else {
                     [self setBusy:NO status:[self L:@"singleDone"]];
-                    NSAlert *done = [[NSAlert alloc] init];
-                    done.messageText = [self L:@"singleDoneTitle"];
-                    done.informativeText = [self L:@"singleDoneInfo"];
-                    [done addButtonWithTitle:[self L:@"ok"]];
-                    [done beginSheetModalForWindow:self.window completionHandler:nil];
                 }
             });
         }

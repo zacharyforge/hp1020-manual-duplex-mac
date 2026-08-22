@@ -35,6 +35,7 @@ CLANG_MODULE_CACHE_PATH="${TMPDIR:-/tmp}/hp1020-manual-duplex-clang-cache" \
 /usr/bin/ditto "$PROJECT_DIR/Info.plist" "$CONTENTS/Info.plist"
 /usr/bin/ditto "$PROJECT_DIR/Resources/two-page-test.pdf" "$CONTENTS/Resources/two-page-test.pdf"
 /usr/bin/ditto "$PROJECT_DIR/Resources/blank-a4.pdf" "$CONTENTS/Resources/blank-a4.pdf"
+/usr/bin/ditto "$PROJECT_DIR/Resources/AppIcon.icns" "$CONTENTS/Resources/AppIcon.icns"
 
 /usr/bin/codesign --force --deep --sign - "$APP_PATH"
 /usr/bin/codesign --verify --deep --strict "$APP_PATH"

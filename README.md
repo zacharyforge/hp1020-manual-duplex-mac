@@ -6,9 +6,13 @@ A small native macOS helper for manual two-sided printing with the HP LaserJet 1
 
 ## Features
 
-- Chinese and English UI with an in-app language switch.
+- Chinese and English UI with a bilingual **语言 / Language** switch fixed at the upper-right corner.
+- A simple native app icon showing two overlapping sheets.
 - Long-edge binding for book-style left-to-right page turning.
 - Short-edge binding for calendar-style top-to-bottom page turning.
+- All-pages or contiguous page-range printing, with correct duplex pairing even when the selected range starts on an even-numbered source page.
+- Choosing or opening a PDF only selects it. Printing starts only after the separate **Start Printing** button is clicked.
+- Successful single-page and duplex completion is shown in the status line without an extra pop-up. Error alerts are retained.
 - A real two-stage workflow: the second print job is not created until the reload checkbox is selected.
 - A bilingual two-page orientation test with large top-edge markers.
 - Automatic fallback to an installed print queue whose name contains `1020`.
@@ -19,7 +23,7 @@ A small native macOS helper for manual two-sided printing with the HP LaserJet 1
 - macOS 13 or later.
 - A working HP LaserJet 1020 / 1020 Plus print queue. The printer driver and any required firmware loader must already be installed.
 - `qpdf`, normally installed with `brew install qpdf`.
-- A4 paper. Version 3.0.0 submits print jobs with A4 and fit-to-page options.
+- A4 paper. Version 4 submits print jobs with A4 and fit-to-page options.
 
 The app first tries the queue name `HP_LaserJet_1020`. If that queue is unavailable, it uses the first available queue whose name contains `1020`.
 
@@ -35,11 +39,13 @@ The driver files are not included or redistributed here. Follow the referenced p
 
 1. Select Chinese or English.
 2. Select the binding direction.
-3. Choose a PDF, or run the built-in orientation test.
-4. Wait until the first side finishes completely.
-5. Remove the entire printed stack without changing its page order.
-6. Reload it printed-side down, feeding the bottom edge into the tray first.
-7. Select the confirmation checkbox and click **Print Second Side**.
+3. Click **Choose PDF**. Selecting the file does not print it.
+4. Select **All pages** or **Page range**. For a range, enter the first and/or last source-PDF page; a blank field means the first or last page.
+5. Click **Start Printing**. Alternatively, **Run Orientation Test** immediately prints both built-in test pages and ignores the range setting.
+6. Wait until the first side finishes completely.
+7. Remove the entire printed stack without changing its page order.
+8. Reload it printed-side down, feeding the bottom edge into the tray first.
+9. Select the confirmation checkbox and click **Print Second Side**.
 
 Binding direction matters:
 
@@ -56,6 +62,13 @@ Open Terminal in the project directory and run:
 
 The app is created at `build/HP1020 Manual Duplex.app`. The build script produces an Apple silicon + Intel universal binary and applies an ad-hoc signature.
 
+The generated `Resources/AppIcon.icns` is included in the repository, so ImageMagick is not required for a normal build. To regenerate it from the editable SVG source, install ImageMagick and run:
+
+```sh
+brew install imagemagick
+./Scripts/make_app_icon.sh
+```
+
 To regenerate the built-in bilingual test PDF, install ReportLab and run:
 
 ```sh
@@ -65,9 +78,9 @@ python3 Scripts/make_test_pdf.py Resources/two-page-test.pdf
 
 ## Release status
 
-- Version 3.0.0 is ad-hoc signed, not Apple-notarized. Build from source if macOS does not allow the downloaded app to open.
+- Version 4 is ad-hoc signed, not Apple-notarized. Build from source if macOS does not allow the downloaded app to open.
 - No open-source license has been selected yet. Source is visible for inspection, but no reuse rights are granted until the repository owner adds a license.
-- The app has been physically tested on Apple silicon with an HP LaserJet 1020. The universal Intel slice builds successfully but still needs additional physical testing.
+- The core manual-duplex workflow has been physically tested on Apple silicon with an HP LaserJet 1020. Page-range ordering and the version 4 interface have been verified without submitting a print job; a physical page-range print test and additional Intel-device testing are still recommended.
 - Apple and HP printer-driver files are intentionally not bundled or redistributed.
 
 ## Privacy
